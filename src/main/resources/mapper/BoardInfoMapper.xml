@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.mapper.BoardInfoMapper">
+    <select id="getBoardList" resultType="com.example.demo.domain.BoardInfoDTO">
+      SELECT board_info_idx, board_info_name
+        FROM BOARD_INFO_TABLE
+	</select>
+
+    <select id="getUserCount" resultType="int">
+      SELECT COUNT(*)
+        FROM USER_TABLE
+       WHERE USER_ID = #{userId}
+	</select>
+
+    <select id="getUserId" resultType="com.example.demo.domain.UserInfoDTO">
+      SELECT USER_IDX, USER_NAME, USER_ID
+        FROM USER_TABLE
+       WHERE USER_ID = #{userId}
+         AND USER_PW = #{userPw}
+	</select>
+
+    <update id="updateUserInfo">
+        UPDATE USER_TABLE
+           SET USER_ID = #{userId},
+               USER_PW = #{userPw}
+         WHERE USER_ID = #{userId}
+    </update>
+
+    <insert id="register">
+        INSERT INTO USER_TABLE(USER_IDX, USER_NAME, USER_ID, USER_PW)
+             VALUES (USER_SEQ.NEXTVAL, #{userName}, #{userId}, #{userPw})
+    </insert>
+
+    <select id="getBoardNameLIst" resultType="com.example.demo.domain.BoardInfoDTO">
+      SELECT BOARD_INFO_NAME
+        FROM BOARD_INFO_TABLE
+       WHERE BOARD_INFO_IDX = #{boardInfoIdx}
+	</select>
+
+    <select id="getBoardContentList" resultType="com.example.demo.domain.BoardContentForList">
+        <![CDATA[
+            SELECT P2.*
+                FROM (
+                      SELECT rownum as NUM , p1.*
+                        FROM (
+                              SELECT T1.CONTENT_IDX, T1.CONTENT_SUBJECT,
+                                     TO_CHAR(T1.CONTENT_DATE, 'YYYY-MM-DD') AS CONTENT_DATE,
+                                     T2.USER_NAME
+                                FROM CONTENT_TABLE T1
+                                    ,USER_TABLE T2
+                               WHERE T1.CONTENT_WRITER_IDX = T2.USER_IDX
+                                 AND T1.CONTENT_BOARD_IDX = 1
+                            ORDER BY T1.CONTENT_IDX
+                      ) P1
+                ) P2
+               WHERE P2.NUM >= (#{page}-1) * #{pageAmount}
+                 AND P2.NUM <= #{page} * #{pageAmount}
+        ]]>
+	</select>
+
+    <select id="getTotalBoardContentCount" resultType="int">
+        SELECT COUNT(*) AS TOTAL
+          FROM CONTENT_TABLE
+         WHERE CONTENT_BOARD_IDX = #{boardInfoIdx}
+	</select>
+
+
+    <insert id="BoardContentRegister">
+        INSERT INTO CONTENT_TABLE (CONTENT_IDX, CONTENT_SUBJECT, CONTENT_TEXT,CONTENT_WRITER_IDX,
+                                   CONTENT_BOARD_IDX, CONTENT_DATE)
+            VALUES (CONTENT_SEQ.NEXTVAL, #{boardSubject}, #{boardContent},#{boardWriterIdx},
+                    #{contentBoardIdx}, sysdate)
+    </insert>
+
+
+    <select id="getBoardContent" resultType="com.example.demo.domain.BoardContentDetail">
+      SELECT T1.CONTENT_IDX
+            ,T1.CONTENT_SUBJECT
+            ,T1.CONTENT_TEXT
+            ,T1.CONTENT_WRITER_IDX
+            ,T2.USER_NAME
+            ,TO_CHAR(T1.CONTENT_DATE, 'YYYY-MM-DD') AS CONTENT_DATE
+        FROM CONTENT_TABLE T1
+            ,USER_TABLE    T2
+       WHERE T1.CONTENT_WRITER_IDX = T2.USER_IDX
+         AND T1.CONTENT_IDX = #{contentIdx}
+	</select>
+
+    <select id="getCurrentVal" resultType="string">
+       SELECT CONTENT_SEQ.currval AS CONTENT_IDX
+         FROM DUAL
+	</select>
+
+    <update id="modifyBoardContent">
+        update content_table
+           set content_subject = #{contentSubject},
+               content_text    = #{contentText}
+         WHERE CONTENT_IDX     = #{contentIdx}
+    </update>
+
+    <delete id="deleteBoardContent">
+		delete from content_table
+		      where content_idx = #{contentIdx}
+	</delete>
+
+    <select id="get_top_board_list" resultType="com.example.demo.domain.BoardContentForList">
+        <![CDATA[
+            SELECT P2.*
+                FROM (
+                      SELECT rownum as NUM , p1.*
+                        FROM (
+                              SELECT T1.CONTENT_IDX, T1.CONTENT_SUBJECT,
+                                     TO_CHAR(T1.CONTENT_DATE, 'YYYY-MM-DD') AS CONTENT_DATE,
+                                     T2.USER_NAME
+                                FROM CONTENT_TABLE T1
+                                    ,USER_TABLE T2
+                               WHERE T1.CONTENT_WRITER_IDX = T2.USER_IDX
+                                 AND T1.CONTENT_BOARD_IDX = 1
+                            ORDER BY T1.CONTENT_IDX
+                      ) P1
+                ) P2
+               WHERE P2.NUM >= 1
+                 AND P2.NUM <= 5
+        ]]>
+	</select>
+
+</mapper>

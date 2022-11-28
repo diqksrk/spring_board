@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.demo.mapper.FBoardMapper">
+    <sql id="criteria">
+        <trim prefix="(" suffix=") AND " prefixOverrides="OR">
+            <foreach item='type' collection="cri.typeArr">
+                <trim prefix="OR">
+                    <choose>
+                        <when test="type=='T'.toString()">
+                            title like '%' || #{cri.keyword} || '%'
+                        </when>
+                        <when test="type=='C'.toString()">
+                            contents like '%' || #{cri.keyword} || '%'
+                        </when>
+                        <when test="type=='W'.toString()">
+                            writer like '%' || #{cri.keyword} || '%'
+                        </when>
+                    </choose>
+                </trim>
+            </foreach>
+        </trim>
+    </sql>
+
+
+    <select id="getTitle" resultType="String">
+        SELECT TITLE
+        from tbl_board
+        where BNO=1
+    </select>
+
+    <select id="getListWithPaging" resultType="com.example.demo.domain.BoardVO">
+		<![CDATA[
+		select
+		 bno, title, contents, creationDate, updateDate, replycnt, writer
+		from (
+		    select /*+INDEX_DESC(tbl_board pk_test_board) */ rownum rn, bno, title, contents, creationDate, updateDate, writer,
+		        replycnt
+		    from ${tbl_name}
+		    where
+        ]]>
+        
+        <include refid="criteria"></include>
+        
+        <![CDATA[
+            rownum <= #{cri.pageNum} * #{cri.amount}
+            )
+         where rn > (#{cri.pageNum} -1) * #{cri.amount}
+        ]]>
+    </select>
+
+    <select id="getList" resultType="com.example.demo.domain.BoardVO">
+        select *
+        from tbl_board
+    </select>
+
+    <select id="read" resultType="com.example.demo.domain.BoardVO">
+        select * from tbl_board where bno=#{bno}
+    </select>
+
+    <select id="getTotalCount" resultType="int">
+        select count(*) from ${tbl_name}
+        where
+
+        <include refid="criteria"></include>
+
+        bno > 0
+    </select>
+
+    <insert id="insert">
+        insert into tbl_board (BNO, TITLE, CONTENTS, writer)
+        values (seq_board.nextval, #{title}, #{contents}, #{writer})
+    </insert>
+
+    <insert id="insertSelectKey">
+        <selectKey keyProperty="bno" order="BEFORE" resultType="long">
+            select seq_board.nextval from dual
+        </selectKey>
+
+        insert into tbl_board (BNO, TITLE, CONTENTS, writer)
+        values (#{bno}, #{title}, #{contents}, #{writer})
+    </insert>
+
+    <delete id="delete">
+        delete tbl_board where bno=#{bno}
+    </delete>
+
+    <update id="update">
+        update tbl_board
+        set title=#{title},
+        contents=#{contents},
+        UPDATEDATE = sysdate
+        where bno=#{bno}
+    </update>
+
+    <update id="updateReplyCnt">
+        update tbl_board set replycnt = replycnt + #{amount} where bno = #{bno}
+    </update>
+
+</mapper>
