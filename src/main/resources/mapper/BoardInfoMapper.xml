@@ -29,8 +29,8 @@
     </update>
 
     <insert id="register">
-        INSERT INTO USER_TABLE(USER_IDX, USER_NAME, USER_ID, USER_PW)
-             VALUES (USER_SEQ.NEXTVAL, #{userName}, #{userId}, #{userPw})
+        INSERT INTO USER_TABLE(USER_NAME, USER_ID, USER_PW)
+             VALUES (#{userName}, #{userId}, #{userPw})
     </insert>
 
     <select id="getBoardNameLIst" resultType="com.example.demo.domain.BoardInfoDTO">
@@ -43,20 +43,18 @@
         <![CDATA[
             SELECT P2.*
                 FROM (
-                      SELECT rownum as NUM , p1.*
+                      SELECT P1.*
                         FROM (
                               SELECT T1.CONTENT_IDX, T1.CONTENT_SUBJECT,
-                                     TO_CHAR(T1.CONTENT_DATE, 'YYYY-MM-DD') AS CONTENT_DATE,
+                                     DATE_FORMAT(T1.CONTENT_DATE, '%Y%m%d') AS CONTENT_DATE,
                                      T2.USER_NAME
                                 FROM CONTENT_TABLE T1
                                     ,USER_TABLE T2
                                WHERE T1.CONTENT_WRITER_IDX = T2.USER_IDX
-                                 AND T1.CONTENT_BOARD_IDX = 1
+                                 AND T1.CONTENT_BOARD_IDX = #{boardInfoIdx}
                             ORDER BY T1.CONTENT_IDX
                       ) P1
                 ) P2
-               WHERE P2.NUM >= (#{page}-1) * #{pageAmount}
-                 AND P2.NUM <= #{page} * #{pageAmount}
         ]]>
 	</select>
 
@@ -68,10 +66,10 @@
 
 
     <insert id="BoardContentRegister">
-        INSERT INTO CONTENT_TABLE (CONTENT_IDX, CONTENT_SUBJECT, CONTENT_TEXT,CONTENT_WRITER_IDX,
-                                   CONTENT_BOARD_IDX, CONTENT_DATE)
-            VALUES (CONTENT_SEQ.NEXTVAL, #{boardSubject}, #{boardContent},#{boardWriterIdx},
-                    #{contentBoardIdx}, sysdate)
+        INSERT INTO CONTENT_TABLE (CONTENT_SUBJECT, CONTENT_TEXT,CONTENT_WRITER_IDX,
+                                   CONTENT_BOARD_IDX, CONTENT_DATE, ORIGINAL_FILE_NAME, STORED_FILE_PATH, FILE_SIZE, IMAGE_URL)
+            VALUES (#{boardSubject}, #{boardContent},#{boardWriterIdx},
+                    #{contentBoardIdx}, SYSDATE(), #{originalFileName},#{storedFilePath},#{fileSize}, #{imageUrl})
     </insert>
 
 
@@ -81,7 +79,8 @@
             ,T1.CONTENT_TEXT
             ,T1.CONTENT_WRITER_IDX
             ,T2.USER_NAME
-            ,TO_CHAR(T1.CONTENT_DATE, 'YYYY-MM-DD') AS CONTENT_DATE
+            ,DATE_FORMAT(T1.CONTENT_DATE, '%Y%m%d') AS CONTENT_DATE
+            ,T1.IMAGE_URL
         FROM CONTENT_TABLE T1
             ,USER_TABLE    T2
        WHERE T1.CONTENT_WRITER_IDX = T2.USER_IDX
@@ -89,8 +88,8 @@
 	</select>
 
     <select id="getCurrentVal" resultType="string">
-       SELECT CONTENT_SEQ.currval AS CONTENT_IDX
-         FROM DUAL
+        SELECT IFNULL(MAX(CONTENT_IDX), 0) AS CURVAL
+          FROM CONTENT_TABLE
 	</select>
 
     <update id="modifyBoardContent">
@@ -101,28 +100,27 @@
     </update>
 
     <delete id="deleteBoardContent">
-		delete from content_table
-		      where content_idx = #{contentIdx}
+		delete from CONTENT_TABLE
+		      where CONTENT_IDX = #{contentIdx}
 	</delete>
 
     <select id="get_top_board_list" resultType="com.example.demo.domain.BoardContentForList">
         <![CDATA[
             SELECT P2.*
                 FROM (
-                      SELECT rownum as NUM , p1.*
+                      SELECT P1.*
                         FROM (
                               SELECT T1.CONTENT_IDX, T1.CONTENT_SUBJECT,
-                                     TO_CHAR(T1.CONTENT_DATE, 'YYYY-MM-DD') AS CONTENT_DATE,
+                                     DATE_FORMAT(T1.CONTENT_DATE, '%Y%m%d') AS CONTENT_DATE,
                                      T2.USER_NAME
                                 FROM CONTENT_TABLE T1
                                     ,USER_TABLE T2
                                WHERE T1.CONTENT_WRITER_IDX = T2.USER_IDX
-                                 AND T1.CONTENT_BOARD_IDX = 1
+                                 AND T1.CONTENT_BOARD_IDX = #{boardInfoIdx}
                             ORDER BY T1.CONTENT_IDX
                       ) P1
                 ) P2
-               WHERE P2.NUM >= 1
-                 AND P2.NUM <= 5
+                LIMIT 5 OFFSET 0
         ]]>
 	</select>
 

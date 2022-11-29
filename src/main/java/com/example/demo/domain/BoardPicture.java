@@ -9,14 +9,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BoardContentDTO {
+public class BoardPicture {
     private String boardSubject;
     private String boardContent;
     private int boardWriterIdx;
     private int contentBoardIdx;
 
-    private String originalFileName;
-    private String storedFilePath;
-    private long fileSize;
-    private String imageUrl;
+    private String original_file_name;
+    private String stored_file_path;
+    private long file_size;
 }

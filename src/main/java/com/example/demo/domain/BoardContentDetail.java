@@ -10,8 +10,9 @@ import lombok.NoArgsConstructor;
 public class BoardContentDetail {
     private int contentIdx;
     private String contentSubject;
-    private Long contentText;
+    private String contentText;
     private int contentWriterIdx;
     private String userName;
     private String contentDate;
+    private String imageUrl;
 }

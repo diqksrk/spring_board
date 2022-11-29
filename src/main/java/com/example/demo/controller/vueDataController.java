@@ -9,7 +9,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import javax.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,12 +88,30 @@ public class vueDataController {
     }
 
     @PostMapping(value = "/server/register_board_content")
-    public ResponseEntity<String> getBoardLIst(@RequestBody BoardContentDTO vo) {
-        log.info("ReplyVO: " + vo);
+    public ResponseEntity<String> getBoardLIst(
+//            @RequestBody BoardContentDTO vo
+            @Valid @RequestParam("boardWriterIdx") int boardWriterIdx,
+            @Valid @RequestParam("contentBoardIdx") int contentBoardIdx,
+            @Valid @RequestParam("boardSubject") String boardSubject,
+            @Valid @RequestParam("boardContent") String boardContent,
+            @Valid @RequestParam("files") List<MultipartFile> files
+    ) throws Exception {
+//        log.info("ReplyVO: " + vo);
         int insertCount = 0;
-        insertCount = boardInfoService.BoardContentRegister(vo);
+//        insertCount = boardInfoService.BoardContentRegister(vo);
+
+        insertCount = boardInfoService.addBoard(
+                BoardContentDTO.builder()
+                        .boardWriterIdx(boardWriterIdx)
+                        .contentBoardIdx(contentBoardIdx)
+                        .boardSubject(boardSubject)
+                        .boardContent(boardContent)
+                        .build(), files
+        );
+
         String val = boardInfoService.getCurrentVal();
         log.info("Reply insert COUNT : " + insertCount);
+
 
         return insertCount == 1 ? new ResponseEntity<String>(val, HttpStatus.OK)
                 : new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
@@ -120,7 +140,9 @@ public class vueDataController {
     @PostMapping(value = "/server/board/get_content")
     public ResponseEntity<BoardContentDetail> get(@RequestBody VueCriteria vo){
         log.info("/get or modify");
-        return new ResponseEntity<>(boardInfoService.getBoardContent(vo), HttpStatus.OK);
+        BoardContentDetail boardContent = boardInfoService.getBoardContent(vo);
+
+        return new ResponseEntity<>(boardContent, HttpStatus.OK);
     }
 
     @PostMapping(value = "/server/get_top_board_list")
